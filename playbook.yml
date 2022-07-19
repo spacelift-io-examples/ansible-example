@@ -1,0 +1,54 @@
+- hosts: all
+  gather_facts: false # Facts will be gathered later, once the hosts are available
+  ignore_unreachable: true
+  vars_files:
+    - vars/default.yml
+  tasks:
+    - name: Wait for hosts to become reachable
+      ansible.builtin.wait_for_connection:
+            timeout: 180
+
+    - name: Gather facts
+      ansible.builtin.setup:
+
+    - name: Install Apache packages
+      become: true
+      ansible.builtin.yum:
+        name: httpd
+        state: present
+
+    - name: Create document root
+      become: true
+      ansible.builtin.file:
+        state: directory
+        dest: "{{ doc_root }}"
+        mode: 0701
+
+    - name: Create configuration file
+      become: true
+      ansible.builtin.template:
+        src: webserver.j2
+        dest: /etc/httpd/conf.d/spacelift.conf
+        mode: 0644
+      notify: Restart server
+
+    - name: Copy web pages
+      become: true
+      ansible.builtin.template:
+        src: index.html.j2
+        dest: "{{ doc_root }}/index.html"
+
+    - name: Ensure httpd is running
+      become: true
+      ansible.builtin.service:
+        name: httpd
+        state: started
+      ignore_errors: "{{ ansible_check_mode }}"
+
+  handlers:
+    - name: Restart server
+      become: true
+      ansible.builtin.service:
+        name: httpd
+        state: restarted
+      ignore_errors: "{{ ansible_check_mode }}"
