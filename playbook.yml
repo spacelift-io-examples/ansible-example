@@ -20,7 +20,7 @@
     - name: Create configuration file
       become: true
       ansible.builtin.template:
-        src: webserver.j2
+        src: spacelift.conf.j2
         dest: /etc/httpd/conf.d/spacelift.conf
         mode: 0644
       notify: Restart server
