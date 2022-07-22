@@ -1,0 +1,10 @@
+version: "1"
+
+stack_defaults:
+    runner_image: public.ecr.aws/spacelift/runner-ansible:latest
+    before_init:
+        - pip3 install --target=/mnt/workspace/pip boto3 botocore
+        - export PYTHONPATH=/mnt/workspace/pip
+        - chmod 600 /mnt/workspace/ansible.pem
+    environment:
+            ANSIBLE_CONFIG: /mnt/workspace/source/ansible.cfg
