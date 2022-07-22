@@ -9,4 +9,4 @@ stack_defaults:
     before_apply:
         - chmod 600 /mnt/workspace/ansible.pem
     environment:
-            ANSIBLE_CONFIG: /mnt/workspace/source/ansible.cfg
+        ANSIBLE_CONFIG: /mnt/workspace/source/ansible.cfg
