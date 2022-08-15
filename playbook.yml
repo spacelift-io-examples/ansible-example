@@ -1,16 +1,9 @@
 - hosts: all
-  gather_facts: false # Facts will be gathered later, once the hosts are available
+  gather_facts: true
   ignore_unreachable: true
   vars_files:
     - vars/default.yml
   tasks:
-    - name: Wait for hosts to become reachable
-      ansible.builtin.wait_for_connection:
-            timeout: 180
-
-    - name: Gather facts
-      ansible.builtin.setup:
-
     - name: Install Apache packages
       become: true
       ansible.builtin.yum:
@@ -27,7 +20,7 @@
     - name: Create configuration file
       become: true
       ansible.builtin.template:
-        src: webserver.j2
+        src: spacelift.conf.j2
         dest: /etc/httpd/conf.d/spacelift.conf
         mode: 0644
       notify: Restart server
