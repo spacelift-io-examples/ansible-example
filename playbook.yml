@@ -1,6 +1,5 @@
 - hosts: all
   gather_facts: true
-  ignore_unreachable: true
   vars_files:
     - vars/default.yml
   tasks:
