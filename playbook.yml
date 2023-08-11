@@ -31,6 +31,12 @@
         src: index.html.j2
         dest: "{{ doc_root }}/index.html"
 
+    - name: Copy web pages
+      become: true
+      ansible.builtin.template:
+        src: info.html.j2
+        dest: "{{ doc_root }}/info.html"
+
     - name: Ensure httpd is running
       become: true
       ansible.builtin.service:
