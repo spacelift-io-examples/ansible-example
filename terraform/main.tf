@@ -44,6 +44,11 @@ resource "azurerm_network_interface" "example" {
   }
 }
 
+resource "tls_private_key" "rsa" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
 resource "azurerm_virtual_machine" "example" {
   name                  = "K21-VM"
   location              = azurerm_resource_group.example.location
@@ -73,5 +78,13 @@ resource "azurerm_virtual_machine" "example" {
 
   os_profile_linux_config {
     disable_password_authentication = false
+    ssh_keys {
+      path     = "/home/{username}/.ssh/authorized_keys"
+      key_data = tls_private_key.rsa.public_key_openssh
+    }
+
+  }
+  tags = {
+    application = "example"
   }
 }
