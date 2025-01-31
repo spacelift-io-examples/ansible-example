@@ -2,4 +2,4 @@
 plugin: azure_rm
 include_vm_resource_groups:
   - example
-auth_source: auto
+auth_source: env
