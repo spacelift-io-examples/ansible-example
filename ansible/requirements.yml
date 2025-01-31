@@ -1,2 +1,2 @@
 collections:
-  - azure.azcollection
+  - name: azure.azcollection
