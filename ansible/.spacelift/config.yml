@@ -1,6 +1,6 @@
 version: "1"
 
 stack_defaults:
-    runner_image: public.ecr.aws/spacelift/runner-ansible-azure:latest
+    runner_image: public.ecr.aws/spacelift/runner-ansible:10.2-azure-linux-amd64
     environment:
         ANSIBLE_CONFIG: /mnt/workspace/source/ansible.cfg
