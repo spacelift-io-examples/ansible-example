@@ -1,6 +1,27 @@
 version: "1"
 
+steps: &steps
+    - chmod 644 myazure_rm.yml
+
+    # The azure_rm dynamic inventory expects the env vars names to be slightly different than the ones provided by Spacelift
+    # we simply reexport them here to the expected names: https://github.com/ansible-collections/azure/blob/dev/plugins/module_utils/azure_rm_common.py#L55
+    - export AZURE_CLIENT_ID=$ARM_CLIENT_ID && export AZURE_SECRET=$ARM_CLIENT_SECRET && export AZURE_TENANT=$ARM_TENANT_ID && export AZURE_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID
+
+    # Remove the uamqp dependency as its known to not build correctly on python 3.12. This package is no longer
+    # maintained by the Azure team and the ansible azure dynamic inventory does not require iot-hub so we can remove it from the requirements.
+    # https://github.com/Azure/azure-uamqp-python/issues/386
+    - sed -i '/azure-iot-hub==2.6.1;platform_machine=="x86_64"/d' /mnt/workspace/source/ansible/.spacelift/.ansible/collections/ansible_collections/azure/azcollection/requirements.txt
+
+    # This step is required as documented by the azure collection \
+    # https://galaxy.ansible.com/ui/repo/published/azure/azcollection/docs/
+    # Spacelift also highly recommends building a custom runner image as this step takes about 5 minutes to run out of the box.
+    - /usr/local/bin/python3.12 -m pip install -r /mnt/workspace/source/ansible/.spacelift/.ansible/collections/ansible_collections/azure/azcollection/requirements.txt
+
 stack_defaults:
     runner_image: public.ecr.aws/spacelift/runner-ansible:10.2-azure-linux-amd64
     environment:
         ANSIBLE_CONFIG: /mnt/workspace/source/ansible.cfg
+        ANSIBLE_AZURE_AUTH_SOURCE: env
+
+    before_plan: *steps
+    before_apply: *steps
