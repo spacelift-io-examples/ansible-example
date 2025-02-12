@@ -24,6 +24,12 @@ stacks:
             ANSIBLE_CONFIG: /mnt/workspace/source/ansible/ansible.cfg
             ANSIBLE_AZURE_AUTH_SOURCE: env
 
+            # The following environment variables are also required
+            # you can see them used in the dynamic inventory myazure_rm.yml
+            # However, I did not commit them here to keep passwords out of git.
+            # ANSIBLE_USER = username to machines
+            # ANSIBLE_PASSWORD = password to machines
+
         before_init:
             - chmod 644 myazure_rm.yml
         before_plan: *steps
