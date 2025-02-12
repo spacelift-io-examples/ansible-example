@@ -21,7 +21,15 @@ steps: &steps
 
 stacks:
     ansible-azure:
+
+        # We're using a custom image here because we are using password authentication which requires the sshpass
+        # package that is not included with the default spacelift runner image. If you dont use password authentication
+        # which is recommended, you can use public.ecr.aws/spacelift/runner-ansible:10.2-azure-linux-amd64
+        # the image used here is NOT a production ready image and could be deleted at any time. The Dockerfile used
+        # to create this image is available in the root of the repository. You must build this image and host it in your
+        # own registry to be able to use password authentication.
         runner_image: docker.io/apollorion/playground:azure-spacelift-with-sshpass
+
         environment:
             ANSIBLE_CONFIG: /mnt/workspace/source/ansible/ansible.cfg
             ANSIBLE_AZURE_AUTH_SOURCE: env
@@ -34,5 +42,6 @@ stacks:
 
         before_init:
             - chmod 644 myazure_rm.yml
+        # Pointers to the above steps
         before_plan: *steps
         before_apply: *steps
