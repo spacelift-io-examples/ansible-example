@@ -1,6 +1,8 @@
 version: "1"
 
 steps: &steps
+    # Downgrade permissions, spacelift will make this 777 by default and ansible will try to execute it in that case
+    # and it's not an executable file so 644 it.
     - chmod 644 myazure_rm.yml
 
     # The azure_rm dynamic inventory expects the env vars names to be slightly different than the ones provided by Spacelift
@@ -8,7 +10,7 @@ steps: &steps
     - export AZURE_CLIENT_ID=$ARM_CLIENT_ID && export AZURE_SECRET=$ARM_CLIENT_SECRET && export AZURE_TENANT=$ARM_TENANT_ID && export AZURE_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID
 
     # Remove the uamqp dependency as its known to not build correctly on python 3.12. This package is no longer
-    # maintained by the Azure team and the ansible azure dynamic inventory does not require iot-hub so we can remove it from the requirements.
+    # maintained by the Azure team and the ansible azure dynamic inventory does not require iot-hub (which depends on uamqp) so we can remove it from the requirements.
     # https://github.com/Azure/azure-uamqp-python/issues/386
     - sed -i '/azure-iot-hub==2.6.1;platform_machine=="x86_64"/d' /mnt/workspace/source/ansible/.spacelift/.ansible/collections/ansible_collections/azure/azcollection/requirements.txt
 
@@ -25,7 +27,7 @@ stacks:
             ANSIBLE_AZURE_AUTH_SOURCE: env
 
             # The following environment variables are also required
-            # you can see them used in the dynamic inventory myazure_rm.yml
+            # you can see them used in the playbook playbook.yml
             # However, I did not commit them here to keep passwords out of git.
             # ANSIBLE_USER = username to machines
             # ANSIBLE_PASSWORD = password to machines
