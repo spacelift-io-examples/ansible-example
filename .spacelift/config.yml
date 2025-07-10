@@ -29,7 +29,7 @@ stacks:
         # the image used here is NOT a production ready image and could be deleted at any time. The Dockerfile used
         # to create this image is available in the root of the repository. You must build this image and host it in your
         # own registry to be able to use password authentication.
-        runner_image: public.ecr.aws/spacelift/runner-ansible:11.7-azure-linux-amd64
+        runner_image: public.ecr.aws/spacelift/runner-ansible:10.7-azure-linux-amd64
 
         environment:
             ANSIBLE_CONFIG: /mnt/workspace/source/ansible/ansible.cfg
