@@ -12,12 +12,13 @@ steps: &steps
     # Remove the uamqp dependency as its known to not build correctly on python 3.12. This package is no longer
     # maintained by the Azure team and the ansible azure dynamic inventory does not require iot-hub (which depends on uamqp) so we can remove it from the requirements.
     # https://github.com/Azure/azure-uamqp-python/issues/386
-    - sed -i '/azure-iot-hub==2.6.1;platform_machine=="x86_64"/d' /mnt/workspace/source/ansible/.spacelift/.ansible/collections/ansible_collections/azure/azcollection/requirements.txt
+    
+    # - sed -i '/azure-iot-hub==2.6.1;platform_machine=="x86_64"/d' /mnt/workspace/source/ansible/.spacelift/.ansible/collections/ansible_collections/azure/azcollection/requirements.txt
 
     # This step is required as documented by the azure collection \
     # https://galaxy.ansible.com/ui/repo/published/azure/azcollection/docs/
     # Spacelift also highly recommends building a custom runner image as this step takes about 5 minutes to run out of the box.
-    - /usr/local/bin/python3.12 -m pip install -r /mnt/workspace/source/ansible/.spacelift/.ansible/collections/ansible_collections/azure/azcollection/requirements.txt
+    # - /usr/local/bin/python3.12 -m pip install -r /mnt/workspace/source/ansible/.spacelift/.ansible/collections/ansible_collections/azure/azcollection/requirements.txt
 
 stacks:
     ansible-azure:
@@ -28,7 +29,7 @@ stacks:
         # the image used here is NOT a production ready image and could be deleted at any time. The Dockerfile used
         # to create this image is available in the root of the repository. You must build this image and host it in your
         # own registry to be able to use password authentication.
-        # runner_image: docker.io/apollorion/playground:azure-spacelift-with-sshpass
+        runner_image: public.ecr.aws/spacelift/runner-ansible:11.7-azure-linux-amd64
 
         environment:
             ANSIBLE_CONFIG: /mnt/workspace/source/ansible/ansible.cfg
