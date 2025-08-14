@@ -7,44 +7,18 @@
   vars_files:
     - vars/default.yml
   tasks:
-    - name: Install Apache packages
-      become: true
-      ansible.builtin.yum:
-        name: httpd
+    - name: Download Notepad++ installer
+      win_get_url:
+        url: https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.5.7/npp.8.5.7.Installer.exe
+        dest: C:\Temp\npp-installer.exe
+
+    - name: Install Notepad++
+      win_package:
+        path: C:\Temp\npp-installer.exe
+        arguments: /S
         state: present
 
-    - name: Create document root
-      become: true
-      ansible.builtin.file:
-        state: directory
-        dest: "{{ doc_root }}"
-        mode: 0701
-
-    - name: Create configuration file
-      become: true
-      ansible.builtin.template:
-        src: spacelift.conf.j2
-        dest: /etc/httpd/conf.d/spacelift.conf
-        mode: 0644
-      notify: Restart server
-
-    - name: Copy web pages
-      become: true
-      ansible.builtin.template:
-        src: index.html.j2
-        dest: "{{ doc_root }}/index.html"
-
-    - name: Ensure httpd is running
-      become: true
-      ansible.builtin.service:
-        name: httpd
-        state: started
-      ignore_errors: "{{ ansible_check_mode }}"
-
-  handlers:
-    - name: Restart server
-      become: true
-      ansible.builtin.service:
-        name: httpd
-        state: restarted
-      ignore_errors: "{{ ansible_check_mode }}"
+    - name: Clean up installer
+      win_file:
+        path: C:\Temp\npp-installer.exe
+        state: absent
