@@ -21,7 +21,7 @@ steps: &steps
     # - /usr/local/bin/python3.12 -m pip install -r /mnt/workspace/source/ansible/.spacelift/.ansible/collections/ansible_collections/azure/azcollection/requirements.txt
 
 stacks:
-    ansible-azure:
+    windows-ansible:
 
         # We're using a custom image here because we are using password authentication which requires the sshpass
         # package that is not included with the default spacelift runner image. If you dont use password authentication
