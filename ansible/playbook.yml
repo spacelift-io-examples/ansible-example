@@ -1,9 +1,24 @@
----
 - hosts: all
-  gather_facts: false
+  gather_facts: true
+  ignore_unreachable: true
+  vars:
+    ansible_user: "{{ lookup('env', 'ANSIBLE_USER') }}"
+    ansible_password: "{{ lookup('env', 'ANSIBLE_PASSWORD') }}"
+  vars_files:
+    - vars/default.yml
   tasks:
-    - name: Install IIS
-      win_feature:
-        name: Web-Server
+    - name: Download Notepad++ installer
+      win_get_url:
+        url: https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.5.7/npp.8.5.7.Installer.exe
+        dest: C:\Temp\npp-installer.exe
+
+    - name: Install Notepad++
+      win_package:
+        path: C:\Temp\npp-installer.exe
+        arguments: /S
         state: present
-      become: true
+
+    - name: Clean up installer
+      win_file:
+        path: C:\Temp\npp-installer.exe
+        state: absent
