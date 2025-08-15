@@ -2,63 +2,62 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "=3.0.0"
+      version = "~> 3.0"
     }
   }
 }
 
-# Configure the Microsoft Azure Provider
 provider "azurerm" {
   features {}
 }
 
-
-resource "azurerm_resource_group" "example" {
-  name     = "K21-ResourceGroup"
+resource "azurerm_resource_group" "rg" {
+  name     = "ansible-demo-rg"
   location = "East US"
 }
 
-resource "azurerm_virtual_network" "example" {
-  name                = "K21-VNET"
+resource "azurerm_virtual_network" "vnet" {
+  name                = "ansible-demo-vnet"
   address_space       = ["10.0.0.0/16"]
-  location            = azurerm_resource_group.example.location
-  resource_group_name = azurerm_resource_group.example.name
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
 }
 
-resource "azurerm_subnet" "example" {
-  name                 = "K21-Subnet"
-  resource_group_name  = azurerm_resource_group.example.name
-  virtual_network_name = azurerm_virtual_network.example.name
-  address_prefixes     = ["10.0.1.0/24"]
+resource "azurerm_subnet" "subnet" {
+  name                 = "internal"
+  resource_group_name  = azurerm_resource_group.rg.name
+  virtual_network_name = azurerm_virtual_network.vnet.name
+  address_prefixes     = ["10.0.2.0/24"]
 }
 
-resource "azurerm_network_interface" "example" {
-  name                = "K21-NIC"
-  location            = azurerm_resource_group.example.location
-  resource_group_name = azurerm_resource_group.example.name
+resource "azurerm_network_interface" "nic" {
+  name                = "ansible-demo-nic"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
 
   ip_configuration {
     name                          = "internal"
-    subnet_id                     = azurerm_subnet.example.id
+    subnet_id                     = azurerm_subnet.subnet.id
     private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.pip.id
   }
 }
 
-resource "tls_private_key" "rsa" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
+resource "azurerm_public_ip" "pip" {
+  name                = "ansible-demo-pip"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  allocation_method   = "Static"
 }
 
-resource "azurerm_windows_virtual_machine" "example" {
-  name                = "example-machine"
-  resource_group_name = azurerm_resource_group.example.name
-  location            = azurerm_resource_group.example.location
-  size                = "Standard_F2"
-  admin_username      = "adminuser"
-  admin_password      = "Password123!"
-  network_interface_ids = [
-    azurerm_network_interface.example.id,
-  ]
+resource "azurerm_windows_virtual_machine" "vm" {
+  name                  = "ansible-demo-win"
+  resource_group_name   = azurerm_resource_group.rg.name
+  location              = azurerm_resource_group.rg.location
+  size                  = "Standard_B2s"
+  admin_username        = "azureuser"
+  admin_password        = "YourP@ssw0rd123!"
+  network_interface_ids = [azurerm_network_interface.nic.id]
 
   os_disk {
     caching              = "ReadWrite"
@@ -68,7 +67,32 @@ resource "azurerm_windows_virtual_machine" "example" {
   source_image_reference {
     publisher = "MicrosoftWindowsServer"
     offer     = "WindowsServer"
-    sku       = "2016-Datacenter"
+    sku       = "2019-Datacenter"
     version   = "latest"
   }
+}
+
+# Run PowerShell to enable WinRM
+resource "azurerm_virtual_machine_extension" "winrm" {
+  name                 = "enable-winrm"
+  virtual_machine_id   = azurerm_windows_virtual_machine.vm.id
+  publisher            = "Microsoft.Compute"
+  type                 = "CustomScriptExtension"
+  type_handler_version = "1.10"
+
+  settings = <<SETTINGS
+    {
+      "commandToExecute": "powershell -ExecutionPolicy Unrestricted -Command \"
+        winrm quickconfig -quiet;
+        Set-Item -Path WSMan:\\localhost\\Service\\Auth\\Basic -Value $true;
+        Set-Item -Path WSMan:\\localhost\\Service\\AllowUnencrypted -Value $true;
+        netsh advfirewall firewall add rule name='WinRM HTTP' dir=in action=allow protocol=TCP localport=5985;
+        Set-Service WinRM -StartMode Automatic
+      \""
+    }
+  SETTINGS
+}
+
+output "pip" {
+  value = azurerm_public_ip.pip.ip_address
 }

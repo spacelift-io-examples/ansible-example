@@ -1,0 +1,9 @@
+all:
+  hosts:
+    windows_vm:
+      ansible_host: <VM_PUBLIC_IP>
+      ansible_user: azureuser
+      ansible_password: "YourP@ssw0rd123!"
+      ansible_connection: winrm
+      ansible_winrm_transport: basic
+      ansible_port: 5985

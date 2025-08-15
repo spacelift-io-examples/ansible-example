@@ -1,15 +1,10 @@
-- hosts: all
-  gather_facts: true
-  ignore_unreachable: true
-  vars:
-    ansible_user: "{{ lookup('env', 'ANSIBLE_USER') }}"
-    ansible_password: "{{ lookup('env', 'ANSIBLE_PASSWORD') }}"
-  vars_files:
-    - vars/default.yml
+---
+- name: Install Notepad++ on Windows
+  hosts: windows_vm
   tasks:
-    - name: Download Notepad++ installer
+    - name: Download Notepad++
       win_get_url:
-        url: https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.5.7/npp.8.5.7.Installer.exe
+        url: https://github.com/notepad-plus-plus/notepad-plus-plus/releases/download/v8.6.4/npp.8.6.4.Installer.x64.exe
         dest: C:\Temp\npp-installer.exe
 
     - name: Install Notepad++
@@ -17,8 +12,3 @@
         path: C:\Temp\npp-installer.exe
         arguments: /S
         state: present
-
-    - name: Clean up installer
-      win_file:
-        path: C:\Temp\npp-installer.exe
-        state: absent
