@@ -2,9 +2,6 @@
   hosts: windows
   gather_facts: no
   tasks:
-    - name: Ping the Windows VM
-      win_ping:
-
     - name: Create a folder
       win_file:
         path: C:\Temp\TestFolder
