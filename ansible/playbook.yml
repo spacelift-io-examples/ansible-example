@@ -1,6 +1,6 @@
 ---
 - name: Install Notepad++ on Windows
-  hosts: all
+  hosts: windows_vm
   tasks:
     - name: Download Notepad++
       win_get_url:
