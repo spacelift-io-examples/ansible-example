@@ -32,17 +32,16 @@ stacks:
         runner_image: public.ecr.aws/spacelift/runner-ansible:10.7-azure-linux-amd64
 
         environment:
-            ANSIBLE_CONFIG: /mnt/workspace/source/ansible/ansible.cfg
             ANSIBLE_AZURE_AUTH_SOURCE: env
 
             # The following environment variables are also required
             # you can see them used in the playbook playbook.yml
             # However, I did not commit them here to keep passwords out of git.
-            # ANSIBLE_USER = adminuser
-            # ANSIBLE_PASSWORD = Password123!
+            ANSIBLE_USER = adminuser
+            ANSIBLE_PASSWORD = Password123!
 
         before_init:
-            - chmod 644 myazure_rm.yml
+            - chmod 644 inventory.yml
         # Pointers to the above steps
         before_plan: *steps
         before_apply: *steps
