@@ -39,7 +39,7 @@ resource "azurerm_network_security_group" "nsg" {
 # Allow WinRM HTTPS (5986)
 resource "azurerm_network_security_rule" "winrm_https" {
   name                        = "Allow-WinRM-HTTPS"
-  priority                    = 1
+  priority                    = 100
   direction                   = "Inbound"
   access                      = "Allow"
   protocol                    = "Tcp"
