@@ -1,0 +1,16 @@
+- name: Test Windows VM via WinRM
+  hosts: windows
+  gather_facts: no
+  tasks:
+    - name: Ping the Windows VM
+      win_ping:
+
+    - name: Create a folder
+      win_file:
+        path: C:\Temp\TestFolder
+        state: directory
+
+    - name: Write a text file
+      win_file:
+        path: C:\Temp\TestFolder\hello.txt
+        state: touch
