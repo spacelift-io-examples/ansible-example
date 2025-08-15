@@ -1,37 +1,71 @@
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.0"
-    }
-  }
-}
-
 provider "azurerm" {
   features {}
 }
 
+#############################
+# Resource Group
+#############################
 resource "azurerm_resource_group" "rg" {
-  name     = "ansible-demo-rg"
+  name     = "rg-winrm-demo"
   location = "East US"
 }
 
+#############################
+# Virtual Network & Subnet
+#############################
 resource "azurerm_virtual_network" "vnet" {
-  name                = "ansible-demo-vnet"
+  name                = "vnet-winrm-demo"
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 }
 
 resource "azurerm_subnet" "subnet" {
-  name                 = "internal"
+  name                 = "subnet-winrm-demo"
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
-  address_prefixes     = ["10.0.2.0/24"]
+  address_prefixes     = ["10.0.1.0/24"]
 }
 
+#############################
+# Network Security Group
+#############################
+resource "azurerm_network_security_group" "nsg" {
+  name                = "nsg-winrm-demo"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+}
+
+# Allow WinRM HTTPS (5986)
+resource "azurerm_network_security_rule" "winrm_https" {
+  name                        = "Allow-WinRM-HTTPS"
+  priority                    = 100
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  destination_port_range      = "5986"
+  source_address_prefix       = "*"
+  destination_address_prefix  = "*"
+  resource_group_name         = azurerm_resource_group.rg.name
+  network_security_group_name = azurerm_network_security_group.nsg.name
+}
+
+#############################
+# Public IP
+#############################
+resource "azurerm_public_ip" "vm_public_ip" {
+  name                = "vm-winrm-pip"
+  location            = azurerm_resource_group.rg.location
+  resource_group_name = azurerm_resource_group.rg.name
+  allocation_method   = "Dynamic"
+}
+
+#############################
+# Network Interface
+#############################
 resource "azurerm_network_interface" "nic" {
-  name                = "ansible-demo-nic"
+  name                = "nic-winrm-demo"
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
 
@@ -39,24 +73,26 @@ resource "azurerm_network_interface" "nic" {
     name                          = "internal"
     subnet_id                     = azurerm_subnet.subnet.id
     private_ip_address_allocation = "Dynamic"
-    public_ip_address_id          = azurerm_public_ip.pip.id
+    public_ip_address_id          = azurerm_public_ip.vm_public_ip.id
   }
 }
 
-resource "azurerm_public_ip" "pip" {
-  name                = "ansible-demo-pip"
-  location            = azurerm_resource_group.rg.location
-  resource_group_name = azurerm_resource_group.rg.name
-  allocation_method   = "Static"
+# Associate NSG with NIC
+resource "azurerm_network_interface_security_group_association" "nic_nsg_assoc" {
+  network_interface_id      = azurerm_network_interface.nic.id
+  network_security_group_id = azurerm_network_security_group.nsg.id
 }
 
+#############################
+# Windows Virtual Machine
+#############################
 resource "azurerm_windows_virtual_machine" "vm" {
-  name                  = "ans-win-demo"
+  name                  = "vm-winrm-demo"
   resource_group_name   = azurerm_resource_group.rg.name
   location              = azurerm_resource_group.rg.location
-  size                  = "Standard_B2s"
+  size                  = "Standard_B2ms"
   admin_username        = "azureuser"
-  admin_password        = "YourP@ssw0rd123!"
+  admin_password        = "P@ssw0rd1234!"
   network_interface_ids = [azurerm_network_interface.nic.id]
 
   os_disk {
@@ -72,20 +108,44 @@ resource "azurerm_windows_virtual_machine" "vm" {
   }
 }
 
-# Run PowerShell to enable WinRM
-resource "azurerm_virtual_machine_extension" "winrm" {
-  name                 = "enable-winrm"
+#############################
+# Enable WinRM HTTPS via Custom Script Extension
+#############################
+resource "azurerm_virtual_machine_extension" "enable_winrm_https" {
+  name                 = "enable-winrm-https"
   virtual_machine_id   = azurerm_windows_virtual_machine.vm.id
   publisher            = "Microsoft.Compute"
   type                 = "CustomScriptExtension"
   type_handler_version = "1.10"
 
   settings = jsonencode({
-    commandToExecute = "powershell -ExecutionPolicy Unrestricted -Command \"winrm quickconfig -quiet; Set-Item -Path WSMan:\\localhost\\Service\\Auth\\Basic -Value $true; Set-Item -Path WSMan:\\localhost\\Service\\AllowUnencrypted -Value $true; netsh advfirewall firewall add rule name='WinRM HTTP' dir=in action=allow protocol=TCP localport=5985; Set-Service WinRM -StartMode Automatic\""
+    commandToExecute = <<EOT
+powershell -ExecutionPolicy Unrestricted -Command "
+# Create a self-signed certificate for WinRM
+$cert = New-SelfSignedCertificate -DnsName $(hostname) -CertStoreLocation Cert:\\LocalMachine\\My
+
+# Configure WinRM listener for HTTPS
+winrm create winrm/config/Listener?Address=*+Transport=HTTPS @{Hostname='$(hostname)'; CertificateThumbprint=$cert.Thumbprint}
+
+# Enable the service and PS remoting securely
+winrm set winrm/config/service @{AllowUnencrypted='false'}
+winrm set winrm/config/service/auth @{Basic='false'}
+Enable-PSRemoting -Force
+"
+EOT
   })
 }
 
+#############################
+# Terraform Outputs for Ansible
+#############################
+output "winvm_public_ip" {
+  value = azurerm_public_ip.vm_public_ip.ip_address
+}
 
-output "pip" {
-  value = azurerm_public_ip.pip.ip_address
+output "ansible_inventory" {
+  value = <<EOT
+[windows]
+winvm ansible_host=${azurerm_public_ip.vm_public_ip.ip_address} ansible_user=azureuser ansible_password=P@ssw0rd1234! ansible_port=5986 ansible_connection=winrm ansible_winrm_transport=ssl ansible_winrm_server_cert_validation=ignore
+EOT
 }
