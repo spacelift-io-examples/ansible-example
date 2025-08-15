@@ -3,7 +3,7 @@ version: "1"
 steps: &steps
     # Downgrade permissions, spacelift will make this 777 by default and ansible will try to execute it in that case
     # and it's not an executable file so 644 it.
-    - chmod 644 myazure_rm.yml
+    - chmod 644 inventory.yml
 
     # The azure_rm dynamic inventory expects the env vars names to be slightly different than the ones provided by Spacelift
     # we simply reexport them here to the expected names: https://github.com/ansible-collections/azure/blob/dev/plugins/module_utils/azure_rm_common.py#L55
