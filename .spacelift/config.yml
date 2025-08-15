@@ -43,7 +43,8 @@ stacks:
 
         before_init:
             - chmod 644 win_test.yml
-            # - "echo $host > /mnt/workspace/inventory.ini"
+            - pip install "pywinrm>=0.4.2" "requests-ntlm"
+            # "echo $host > /mnt/workspace/inventory.ini"
         # Pointers to the above steps
         before_plan: *steps
         before_apply: *steps
