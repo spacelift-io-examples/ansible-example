@@ -32,6 +32,7 @@ stacks:
         runner_image: public.ecr.aws/spacelift/runner-ansible:10.7-azure-linux-amd64
 
         environment:
+            ANSIBLE_CONFIG: /mnt/workspace/source/ansible/ansible.cfg
             ANSIBLE_AZURE_AUTH_SOURCE: env
 
             # The following environment variables are also required
