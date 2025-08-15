@@ -80,18 +80,11 @@ resource "azurerm_virtual_machine_extension" "winrm" {
   type                 = "CustomScriptExtension"
   type_handler_version = "1.10"
 
-  settings = <<SETTINGS
-    {
-      "commandToExecute": "powershell -ExecutionPolicy Unrestricted -Command \"
-        winrm quickconfig -quiet;
-        Set-Item -Path WSMan:\\localhost\\Service\\Auth\\Basic -Value $true;
-        Set-Item -Path WSMan:\\localhost\\Service\\AllowUnencrypted -Value $true;
-        netsh advfirewall firewall add rule name='WinRM HTTP' dir=in action=allow protocol=TCP localport=5985;
-        Set-Service WinRM -StartMode Automatic
-      \""
-    }
-  SETTINGS
+  settings = jsonencode({
+    commandToExecute = "powershell -ExecutionPolicy Unrestricted -Command \"winrm quickconfig -quiet; Set-Item -Path WSMan:\\localhost\\Service\\Auth\\Basic -Value $true; Set-Item -Path WSMan:\\localhost\\Service\\AllowUnencrypted -Value $true; netsh advfirewall firewall add rule name='WinRM HTTP' dir=in action=allow protocol=TCP localport=5985; Set-Service WinRM -StartMode Automatic\""
+  })
 }
+
 
 output "pip" {
   value = azurerm_public_ip.pip.ip_address
